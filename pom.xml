@@ -147,11 +147,22 @@
                                         <argument>-classpath</argument>
                                         <classpath />
                                         <argument>net.ibogner.kinesis.KinesisStressExample</argument>
-                                        <argument>mm-test-stream</argument>
+
+                                        <!-- Name of the kinesis stream to write to -->
+                                        <argument>my-stream-name</argument>
+
+                                        <!-- Number of producer threads -->
                                         <argument>50</argument>
+
+                                        <!-- How many records to put in a PutRecordsRequest -->
                                         <argument>10</argument>
+
+                                        <!-- How many total records to write across all producer threads before the test completes -->
                                         <argument>100000</argument>
-                                        <argument>lithiumdev</argument>
+
+                                        <!-- The profile name of the AWS credentials profile to use.  Comment out if
+                                        running on EC2 instance with IAM profile -->
+                                        <argument>aws-credentials-profilename</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
