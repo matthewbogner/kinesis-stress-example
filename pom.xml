@@ -151,6 +151,9 @@
                                         <!-- Name of the kinesis stream to write to -->
                                         <argument>my-stream-name</argument>
 
+                                        <!-- Name of the AWS region where the stream exists -->
+                                        <argument>us-west-2</argument>
+
                                         <!-- Number of producer threads -->
                                         <argument>50</argument>
 

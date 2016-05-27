@@ -39,6 +39,7 @@ public class KinesisStressExample {
     private volatile boolean keepGoing = true;
 
     private final String streamName;
+    private final String regionName;
     private final Integer numThreads;
     private final Integer numRecordsPerPut;
     private final Long numMessagesToProduce;
@@ -48,8 +49,9 @@ public class KinesisStressExample {
     private final ExecutorService threadPool;
     private final AmazonKinesisClient kinesisClient;
 
-    public KinesisStressExample(String streamName, Integer numThreads, Integer numRecordsPerPut, Long numMessagesToProduce, String credentialsProfileName) {
+    public KinesisStressExample(String streamName, String regionName, Integer numThreads, Integer numRecordsPerPut, Long numMessagesToProduce, String credentialsProfileName) {
         this.streamName = streamName;
+        this.regionName = regionName;
         this.numThreads = numThreads;
         this.numRecordsPerPut = numRecordsPerPut;
         this.numMessagesToProduce = numMessagesToProduce;
@@ -64,7 +66,7 @@ public class KinesisStressExample {
 
             }
         });
-        kinesisClient.setRegion(Region.getRegion(Regions.US_WEST_2));
+        kinesisClient.setRegion(Region.getRegion(Regions.fromName(regionName)));
         AwsSdkMetrics.enableDefaultMetrics();
         threadPool = Executors.newFixedThreadPool(numThreads);
     }
@@ -119,15 +121,16 @@ public class KinesisStressExample {
      *  Usage: [className] [streamName] [numberOfProducerThreads] [numberOfRecordsPerRequest] [numberOfTotalRecordsToPut] [optionalProfileName]
      */
     public static void main(String[] args) throws InterruptedException {
-        checkArgument(args.length >= 4, "Incorrect number of arguments");
+        checkArgument(args.length >= 5, "Incorrect number of arguments");
 
         final String streamName = checkNotNull(args[0], "You must provide a stream name");
-        final String numProducers = checkNotNull(args[1], "You must define the number of producers");
-        final String numRecordsPerPut = checkNotNull(args[2], "You must define how many records to put per request");
-        final String numRecordsToPut = checkNotNull(args[3], "You must define how many records to write during the test");
-        final Optional<String> profileName = args.length > 4 ? Optional.of(args[4]) : Optional.empty();
+        final String regionName = checkNotNull(args[1], "You must provide a region name");
+        final String numProducers = checkNotNull(args[2], "You must define the number of producers");
+        final String numRecordsPerPut = checkNotNull(args[3], "You must define how many records to put per request");
+        final String numRecordsToPut = checkNotNull(args[4], "You must define how many records to write during the test");
+        final Optional<String> profileName = args.length > 5 ? Optional.of(args[5]) : Optional.empty();
 
-        final KinesisStressExample example = new KinesisStressExample(streamName, Integer.valueOf(numProducers), Integer.valueOf(numRecordsPerPut), Long.valueOf(numRecordsToPut), profileName.orElse(null));
+        final KinesisStressExample example = new KinesisStressExample(streamName, regionName, Integer.valueOf(numProducers), Integer.valueOf(numRecordsPerPut), Long.valueOf(numRecordsToPut), profileName.orElse(null));
         example.startProducers();
         example.awaitCompletion();
         logger.info("Test run complete");
