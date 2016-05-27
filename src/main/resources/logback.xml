@@ -1,0 +1,17 @@
+<configuration>
+
+    <property name="ENCODER_PATTERN" value="%date %level [%thread] [%logger:%line] %msg%n" />
+
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder><pattern>${ENCODER_PATTERN}</pattern></encoder>
+    </appender>
+
+    <logger name="net.ibogner" level="DEBUG" />
+    <logger name="org.apache.http" level="INFO" />
+    <logger name="com.amazonaws" level="INFO" />
+
+    <root level="ALL">
+        <appender-ref ref="Console"/>
+    </root>
+
+</configuration>
