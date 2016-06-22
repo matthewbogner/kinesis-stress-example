@@ -127,11 +127,11 @@ public class KinesisStressExample {
     }
 
     /**
-     * Build up a ByteBuffer that's roughly 10KB
+     * Build up a ByteBuffer that's roughly 5KB
      */
     private ByteBuffer buildRandomByteBuffer() {
-        final String tenKBRandomString = Strings.repeat(UUID.randomUUID().toString(), 277);
-        return ByteBuffer.wrap(tenKBRandomString.getBytes(Charsets.UTF_8));
+        final String randomString = Strings.repeat(UUID.randomUUID().toString(), 136);
+        return ByteBuffer.wrap(randomString.getBytes(Charsets.UTF_8));
     }
 
     private AWSCredentialsProvider getCredentialsProvider(String profileName) {
