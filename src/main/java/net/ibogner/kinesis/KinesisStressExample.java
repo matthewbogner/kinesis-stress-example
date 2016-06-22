@@ -12,6 +12,8 @@ import com.amazonaws.metrics.RequestMetricCollector;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
 import com.amazonaws.services.kinesis.model.PutRecordsRequest;
 import com.amazonaws.services.kinesis.model.PutRecordsRequestEntry;
 import com.google.common.base.Charsets;
@@ -44,10 +46,13 @@ public class KinesisStressExample {
     private final Integer numRecordsPerPut;
     private final Long numMessagesToProduce;
 
+    private final AWSCredentialsProvider awsCredentialsProvider;
     private final Random random = new Random();
     private final AtomicLong msgsProduced = new AtomicLong(0);
     private final ExecutorService threadPool;
     private final AmazonKinesisClient kinesisClient;
+
+    private Worker worker;
 
     public KinesisStressExample(String streamName, String regionName, Integer numThreads, Integer numRecordsPerPut, Long numMessagesToProduce, String credentialsProfileName) {
         this.streamName = streamName;
@@ -58,7 +63,7 @@ public class KinesisStressExample {
 
 
         final ClientConfiguration clientConfiguration = new ClientConfiguration();
-        final AWSCredentialsProvider awsCredentialsProvider = getCredentialsProvider(credentialsProfileName);
+        awsCredentialsProvider = getCredentialsProvider(credentialsProfileName);
 
         kinesisClient = new AmazonKinesisClient(awsCredentialsProvider, clientConfiguration, new RequestMetricCollector() {
             @Override
@@ -77,11 +82,28 @@ public class KinesisStressExample {
         }
     }
 
+    public void startConsumers() {
+        final String kclWorkerId = UUID.randomUUID().toString();
+        worker = new Worker.Builder()
+                .recordProcessorFactory(new RecordProcessorFactory())
+                .config(new KinesisClientLibConfiguration(streamName + "kcl-shutdown-example",
+                                                          streamName,
+                                                          awsCredentialsProvider,
+                                                          kclWorkerId)
+                                .withRegionName(regionName))
+                .build();
+        new Thread(worker).start();
+    }
+
     public void awaitCompletion() throws InterruptedException {
         while (msgsProduced.get() < numMessagesToProduce) {
             Thread.sleep(1000);
         }
+        worker.shutdown();
+        logger.info("Done shutting down worker");
+
         keepGoing = false;
+        logger.info("Stopping producer pool...");
         MoreExecutors.shutdownAndAwaitTermination(threadPool, 10, TimeUnit.SECONDS);
     }
 
@@ -132,6 +154,7 @@ public class KinesisStressExample {
 
         final KinesisStressExample example = new KinesisStressExample(streamName, regionName, Integer.valueOf(numProducers), Integer.valueOf(numRecordsPerPut), Long.valueOf(numRecordsToPut), profileName.orElse(null));
         example.startProducers();
+        example.startConsumers();
         example.awaitCompletion();
         logger.info("Test run complete");
     }
